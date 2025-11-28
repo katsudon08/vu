@@ -1,36 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# アクティビティ提案SNS - VU
 
-## Getting Started
 
-First, run the development server:
+## Gitコミットメッセージ：フォーマット
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+<type>(<scope>): #<Issue Number> <subject>
+
+<body>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`<type>`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Prefix | 説明 | 使用場面 |
+| :--: | :--: | :--: |
+| feat | 新機能の追加 | 新しい機能を追加したコミット |
+| fix | バグの修正 | バグを修正したコミット |
+| docs | ドキュメントの変更 | `ドキュメント（例: README, API ドキュメント`など）を追加、修正、削除したコミット |
+| style | コードのスタイルに関する変更 (フォーマット、セミコロンなど) | コードの意味に影響を与えないスタイルの修正（例: インデントの修正、不要な空白の削除、コードフォーマットの適用など） |
+| refactor | コードのリファクタリング (機能変更なし) | コードの内部構造を変更したが、外部から見た動作は変わらないコミット（例: 変数名の変更、関数の分割・統合、ロジックの整理など） |
+| test | テストコードの追加、修正 | 新しいテストコードの追加や既存のテストコードの修正を行ったコミット |
+| chore | ビルドプロセス、補助ツール、依存関係などの管理に関する変更 | 開発環境やビルドシステムに関する変更（例: 依存ライブラリの更新、タスクランナーの設定変更、`gitignore` の修正など） |
+| perf | パフォーマンス改善に関する変更 | コードのパフォーマンスを向上させるための変更を行ったコミット |
+| build | ビルドシステムや外部依存関係に関する変更 | ビルドプロセス自体や、それに必要な外部ライブラリなどの依存関係を変更したコミット |
+| ci | CI (継続的インテグレーション) パイプラインの設定やスクリプトに関する変更 | GitHub Actions、CircleCI などの `CI/CD` に関する設定ファイルやスクリプトを変更したコミット |
+| revert | 直前のコミットを取り消す変更 | 誤った変更を取り消すために `git revert` コマンドを実行した際に生成されるコミット |
