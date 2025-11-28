@@ -319,7 +319,12 @@ export function AccountPage() {
                             累計実行回数
                         </span>
                     </div>
-                    <p className={cn("text-3xl font-black", currentRank.textColor)}>
+                    <p
+                        className={cn(
+                            "text-3xl font-black",
+                            currentRank.textColor
+                        )}
+                    >
                         {activityCount}
                         <span className="text-lg font-medium text-muted-foreground ml-1">
                             回
