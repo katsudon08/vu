@@ -2,20 +2,55 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ActivityCard } from "./activity-card"
-import { useStore, toggleLike } from "@/lib/store"
+import { fetchAllActivities, addLike, removeLike } from "@/lib/api"
+import { useUser } from "@/contexts/user-context"
 import { cn } from "@/lib/utils"
 import { Users, User } from "lucide-react"
+import type { Activity } from "@/lib/api"
 
 type FeedTab = "all" | "mine"
 
 export function Feed() {
   const [activeTab, setActiveTab] = useState<FeedTab>("all")
-  const store = useStore()
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [likedActivityIds, setLikedActivityIds] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { userId } = useUser()
+
+  // アクティビティを取得
+  useEffect(() => {
+    const loadActivities = async () => {
+      setIsLoading(true)
+      const data = await fetchAllActivities(userId || undefined)
+      setActivities(data)
+      // 現在のユーザーがいいねしているアクティビティを取得
+      if (userId) {
+        const likedIds = data
+          .filter((a) => a.likedBy.includes(userId))
+          .map((a) => a.id)
+        setLikedActivityIds(likedIds)
+      }
+      setIsLoading(false)
+    }
+    loadActivities()
+  }, [userId])
 
   const filteredActivities =
-    activeTab === "all" ? store.activities : store.activities.filter((a) => a.userId === store.currentUserId)
+    activeTab === "all" ? activities : activities.filter((a) => a.userId === userId)
+
+  const handleToggleLike = async (activityId: string) => {
+    if (!userId) return
+    const isLiked = likedActivityIds.includes(activityId)
+    if (isLiked) {
+      await removeLike(userId, activityId)
+      setLikedActivityIds(likedActivityIds.filter((id) => id !== activityId))
+    } else {
+      await addLike(userId, activityId)
+      setLikedActivityIds([...likedActivityIds, activityId])
+    }
+  }
 
   return (
     <div className="flex-1 flex flex-col">
@@ -53,7 +88,14 @@ export function Feed() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {filteredActivities.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-6">
+              <Sparkles className="w-10 h-10 text-muted-foreground/50 animate-spin" />
+            </div>
+            <p className="text-lg font-medium">読み込み中...</p>
+          </div>
+        ) : filteredActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
             <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-6">
               <Sparkles className="w-10 h-10 text-muted-foreground/50" />
@@ -67,8 +109,8 @@ export function Feed() {
               <ActivityCard
                 key={activity.id}
                 activity={activity}
-                isLiked={store.likedActivityIds.includes(activity.id)}
-                onToggleLike={() => toggleLike(activity.id)}
+                isLiked={likedActivityIds.includes(activity.id)}
+                onToggleLike={() => handleToggleLike(activity.id)}
                 index={index}
               />
             ))}
