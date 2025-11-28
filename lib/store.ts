@@ -24,6 +24,7 @@ export interface Rank {
   name: string
   minCount: number
   color: string
+  textColor: string
 }
 
 export interface UserProfile {
@@ -35,12 +36,12 @@ export interface UserProfile {
 }
 
 export const ranks: Rank[] = [
-  { name: "ビギナー", minCount: 0, color: "from-gray-400 to-gray-500" },
-  { name: "チャレンジャー", minCount: 5, color: "from-green-400 to-emerald-500" },
-  { name: "アクティブ", minCount: 15, color: "from-blue-400 to-cyan-500" },
-  { name: "エキスパート", minCount: 30, color: "from-purple-400 to-pink-500" },
-  { name: "マスター", minCount: 50, color: "from-yellow-400 to-orange-500" },
-  { name: "レジェンド", minCount: 100, color: "from-rose-400 to-red-500" },
+  { name: "ビギナー", minCount: 0, color: "from-gray-500 to-gray-700", textColor: "text-gray-600" },
+  { name: "チャレンジャー", minCount: 5, color: "from-green-400 to-emerald-500", textColor: "text-green-500" },
+  { name: "アクティブ", minCount: 15, color: "from-blue-400 to-cyan-500", textColor: "text-cyan-500" },
+  { name: "エキスパート", minCount: 30, color: "from-purple-400 to-pink-500", textColor: "text-pink-500" },
+  { name: "マスター", minCount: 50, color: "from-yellow-400 to-orange-500", textColor: "text-orange-500" },
+  { name: "レジェンド", minCount: 100, color: "from-rose-400 to-red-500", textColor: "text-red-500" },
 ]
 
 export const activitySuggestions: Array<{ text: string; category: GenreType; icon: string }> = [
