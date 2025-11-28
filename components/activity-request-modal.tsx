@@ -2,8 +2,12 @@
 
 import { useState, useCallback } from "react"
 import { X, RefreshCw, Check, Sparkles } from "lucide-react"
-import { getRandomActivity, addActivity, categoryIcons } from "@/lib/store"
-import type { GenreType } from "@/types/genre"
+import { categoryIcons, createActivity } from "@/lib/api"
+import { useUser } from "@/contexts/user-context"
+import { genreBandit } from "@/utils/genreBandit"
+import { selectGenre } from "@/utils/selection"
+import { loadGenreScores } from "@/utils/storage"
+import type { GenreType, GenreScore } from "@/types/genre"
 import { cn } from "@/lib/utils"
 
 interface ActivityRequestModalProps {
@@ -11,9 +15,76 @@ interface ActivityRequestModalProps {
   onClose: () => void
 }
 
+function getRandomActivity(): { text: string; category: GenreType } {
+  const suggestions: { [key in GenreType]: string[] } = {
+    RELAX: [
+      "瞑想をする",
+      "深呼吸をする",
+      "ストレッチをする",
+      "好きな音楽を聴く",
+      "本を読む",
+      "温かいお茶を飲む",
+      "窓から外を眺める",
+      "アロマテラピーをする",
+      "瞑想アプリを使う",
+    ],
+    MOVE: [
+      "散歩に出かける",
+      "ジョギングをする",
+      "ヨガをする",
+      "ダンスをする",
+      "筋トレをする",
+      "ストレッチをする",
+      "縄跳びをする",
+      "階段を上り下りする",
+      "バドミントンをする",
+    ],
+    CREATIVE: [
+      "絵を描く",
+      "音楽を作る",
+      "創作を書く",
+      "DIYをする",
+      "写真を撮る",
+      "ブログを書く",
+      "デザインを考える",
+      "映像編集をする",
+      "彫刻をする",
+    ],
+    MUSIC: [
+      "楽器を演奏する",
+      "歌を歌う",
+      "プレイリストを作る",
+      "ラジオを聴く",
+      "ポッドキャストを聴く",
+      "バンド練習をする",
+      "カラオケに行く",
+      "ライブに行く",
+      "新しい曲を探す",
+    ],
+  }
+
+  const genreScores = loadGenreScores("genreScores", [
+    { key: "RELAX", value: 1 },
+    { key: "MOVE", value: 1 },
+    { key: "CREATIVE", value: 1 },
+    { key: "MUSIC", value: 1 },
+  ])!
+  const selectedGenreScore = selectGenre(genreScores)
+  const selectedGenre = selectedGenreScore.key
+  genreBandit(selectedGenre)
+
+  const suggestions_list = suggestions[selectedGenre]
+  const text = suggestions_list[Math.floor(Math.random() * suggestions_list.length)]
+
+  return { text, category: selectedGenre }
+}
+
 export function ActivityRequestModal({ isOpen, onClose }: ActivityRequestModalProps) {
+  const { userId } = useUser()
   const [currentActivity, setCurrentActivity] = useState<{ text: string; category: GenreType }>(getRandomActivity())
   const [isSpinning, setIsSpinning] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleRetry = useCallback(() => {
     setIsSpinning(true)
@@ -23,11 +94,30 @@ export function ActivityRequestModal({ isOpen, onClose }: ActivityRequestModalPr
     }, 400)
   }, [])
 
-  const handleComplete = useCallback(() => {
-    addActivity(currentActivity.text, currentActivity.category)
-    onClose()
-    setCurrentActivity(getRandomActivity())
-  }, [currentActivity, onClose])
+  const handleComplete = useCallback(async () => {
+    if (!userId) {
+      setError('ユーザーIDが見つかりません')
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    try {
+      const result = await createActivity(userId, currentActivity.text, currentActivity.category)
+      if (!result) {
+        setError('アクティビティの作成に失敗しました')
+        return
+      }
+      onClose()
+      setCurrentActivity(getRandomActivity())
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'エラーが発生しました'
+      console.error("Failed to create activity:", error)
+      setError(`エラー: ${errorMessage}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [currentActivity, onClose, userId])
 
   if (!isOpen) return null
 
@@ -101,12 +191,19 @@ export function ActivityRequestModal({ isOpen, onClose }: ActivityRequestModalPr
                 </button>
                 <button
                   onClick={handleComplete}
-                  className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl gradient-instagram text-white font-semibold shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 hover:scale-[1.02] transition-all duration-200"
+                  disabled={isLoading}
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl gradient-instagram text-white font-semibold shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50"
                 >
                   <Check className="w-5 h-5" />
-                  実行した
+                  {isLoading ? "送信中..." : "実行した"}
                 </button>
               </div>
+
+              {error && (
+                <div className="px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl mx-6 mb-4">
+                  <p className="text-sm text-red-600 font-medium">{error}</p>
+                </div>
+              )}
 
               <div className="px-6 pb-6">
                 <p className="text-xs text-center text-muted-foreground">
