@@ -15,8 +15,9 @@ import {
     updateUserProfile,
 } from "@/lib/api";
 import { useUser } from "@/contexts/user-context";
+import { loadGenreScores } from "@/utils/storage";
+import { selectGenre } from "@/utils/selection";
 import type { Activity, DbUser } from "@/lib/api";
-import type { GenreScore } from "@/types/genre";
 
 export function AccountPage() {
     const { userId, isLoading: userContextLoading } = useUser();
@@ -286,11 +287,9 @@ export function AccountPage() {
     const currentRank = getCurrentRank(activityCount);
     const { nextRank, remaining } = getNextRankInfo(activityCount);
 
-    // most_frequent_genre は文字列 (GenreType) であり、GenreScore ではない
-    const mostFrequentGenre =
-        userProfile.most_frequent_genre === null
-            ? ""
-            : (JSON.parse(userProfile.most_frequent_genre) as GenreScore);
+    // genreScoresをもとに最も実行するジャンルを計算
+    const genreScores = loadGenreScores("genreScores");
+    const mostFrequentGenre = genreScores ? selectGenre(genreScores) : null;
 
     return (
         <div className="flex-1 p-4 space-y-6 pb-24">
