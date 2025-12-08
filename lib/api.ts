@@ -84,12 +84,16 @@ export const categoryIcons: Record<GenreType, { icon: string; color: string; lab
 }
 
 export const avatarColorOptions = [
-  { id: 0, label: 'グレイ', icon: '⚫', outer: 'from-gray-400 to-gray-500', inner: 'from-gray-500 to-gray-600' },
+  { id: 0, label: 'グレー', icon: '⚫', outer: 'from-gray-400 to-gray-500', inner: 'from-gray-500 to-gray-600' },
   { id: 1, label: 'グリーン', icon: '💚', outer: 'from-green-400 to-emerald-500', inner: 'from-green-500 to-emerald-600' },
   { id: 2, label: 'ブルー', icon: '💙', outer: 'from-blue-400 to-cyan-500', inner: 'from-blue-500 to-cyan-600' },
   { id: 3, label: 'パープル', icon: '💜', outer: 'from-purple-400 to-pink-500', inner: 'from-purple-500 to-pink-600' },
   { id: 4, label: 'オレンジ', icon: '🧡', outer: 'from-orange-400 to-red-500', inner: 'from-orange-500 to-red-600' },
   { id: 5, label: 'ピンク', icon: '🌸', outer: 'from-pink-400 to-rose-500', inner: 'from-pink-500 to-rose-600' },
+  { id: 6, label: 'ホワイト', icon: '🤍', outer: 'from-gray-100 to-white', inner: 'from-gray-200 to-white' },
+  { id: 7, label: 'イエロー', icon: '💛', outer: 'from-yellow-300 to-amber-400', inner: 'from-yellow-400 to-amber-500' },
+  { id: 8, label: 'レインボー', icon: '🌈', outer: 'from-red-400 via-yellow-400 to-blue-400', inner: 'from-purple-400 via-pink-400 to-emerald-400' },
+
 ]
 
 /**
