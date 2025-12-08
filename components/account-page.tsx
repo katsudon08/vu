@@ -401,12 +401,12 @@ if (isLoading) {
             {showColorSettings && (
                 <div className="card-gradient rounded-2xl p-6 space-y-4">
                     <h3 className="text-sm font-medium text-muted-foreground">
-                        アバター色を選択
+                        アイコンカラーを選択
                     </h3>
 
                     {/* 外側の色 */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">外側の色</label>
+                        <label className="text-sm font-medium">外側のカラー</label>
                         <div className="grid grid-cols-2 gap-2">
                             {avatarColorOptions.map((option) => (
                                 <button
@@ -422,9 +422,10 @@ if (isLoading) {
                                             : "border-transparent opacity-70 hover:opacity-100"
                                     )}
                                 >
-                                    <span className="text-sm font-medium text-white">
-                                        {option.label}
-                                    </span>
+                                     <span className="text-sm font-medium text-white drop-shadow-[0_0_2px_black]">
+                                      {option.label}
+                                     </span>
+
                                 </button>
                             ))}
                         </div>
@@ -432,7 +433,7 @@ if (isLoading) {
 
                     {/* 内側の色 */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">内側の色</label>
+                        <label className="text-sm font-medium">内側のカラー</label>
                         <div className="grid grid-cols-2 gap-2">
                             {avatarColorOptions.map((option) => (
                                 <button
@@ -448,9 +449,10 @@ if (isLoading) {
                                             : "border-transparent opacity-70 hover:opacity-100"
                                     )}
                                 >
-                                    <span className="text-sm font-medium text-white">
-                                        {option.label}
+                                    <span className="text-sm font-medium text-white drop-shadow-[0_0_2px_black]">
+                                     {option.label}
                                     </span>
+
                                 </button>
                             ))}
                         </div>
