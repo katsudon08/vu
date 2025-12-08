@@ -16,8 +16,8 @@ import {
 } from "@/lib/api";
 import { useUser } from "@/contexts/user-context";
 import { loadGenreScores } from "@/utils/storage";
-import { selectGenre } from "@/utils/selection";
 import type { Activity, DbUser } from "@/lib/api";
+import type { GenreType } from "@/types/genre";
 
 export function AccountPage() {
     const { userId, isLoading: userContextLoading } = useUser();
@@ -72,57 +72,26 @@ export function AccountPage() {
                 console.log("AccountPage: profile fetch result:", profile);
 
                 if (!profile) {
-                    // プロフィールが見つからない場合、自動作成を試みる
+                    // プロフィールが見つからない場合
+                    // user-context.tsx の ensureUserProfile が自動作成するはずなので、
+                    // 短時間待って再取得を試みる
                     console.log(
-                        "AccountPage: profile not found, attempting to create..."
+                        "AccountPage: profile not found, waiting for auto-creation..."
                     );
-
-                    // Supabase Auth の ユーザー情報を取得
-                    const {
-                        data: { user: authUser },
-                        error: authError,
-                    } = await supabase.auth.getUser();
-
-                    if (authError || !authUser) {
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    profile = await fetchUserProfile(userId);
+                    
+                    if (!profile) {
                         console.error(
-                            "AccountPage: failed to get auth user:",
-                            authError
-                        );
-                        setError("認証情報が見つかりません");
-                        setIsLoading(false);
-                        return;
-                    }
-
-                    // プロフィール作成
-                    const username = authUser.email?.split("@")[0] || "User";
-                    const { data: newProfile, error: createError } =
-                        await supabase
-                            .from("users")
-                            .insert({
-                                user_id: userId,
-                                username: username,
-                                avatar_url:
-                                    authUser.user_metadata?.avatar_url || null,
-                                activity_count: 0,
-                                most_frequent_genre: null,
-                            })
-                            .select()
-                            .single();
-
-                    if (createError) {
-                        console.error(
-                            "AccountPage: failed to create profile:",
-                            createError
+                            "AccountPage: profile still not found after retry"
                         );
                         setError(
-                            `プロフィール作成エラー: ${createError.message}`
+                            "ユーザープロフィールが見つかりません。ページをリロードしてください。"
                         );
                         setIsLoading(false);
                         return;
                     }
-
-                    console.log("AccountPage: profile created:", newProfile);
-                    profile = newProfile;
                 }
 
                 if (profile) {
@@ -254,13 +223,18 @@ export function AccountPage() {
         return `${days}日前`;
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex-1 flex items-center justify-center">
-                <p className="text-muted-foreground">読み込み中...</p>
+if (isLoading) {
+    return (
+        <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-6 bounce-together">
+                <User className="w-10 h-10 text-muted-foreground/50" />
             </div>
-        );
-    }
+            <p className="text-muted-foreground">読み込み中...</p>
+        </div>
+    );
+}
+
+    
 
     if (error) {
         return (
@@ -287,9 +261,28 @@ export function AccountPage() {
     const currentRank = getCurrentRank(activityCount);
     const { nextRank, remaining } = getNextRankInfo(activityCount);
 
-    // genreScoresをもとに最も実行するジャンルを計算
-    const genreScores = loadGenreScores("genreScores");
-    const mostFrequentGenre = genreScores ? selectGenre(genreScores) : null;
+    // myActivities から最も作成したジャンルを計算
+    let mostFrequentGenre: GenreType | null = null;
+    if (myActivities.length > 0) {
+        const genreCount: Record<GenreType, number> = {
+            RELAX: 0,
+            MOVE: 0,
+            CREATIVE: 0,
+            MUSIC: 0,
+        };
+        
+        myActivities.forEach((activity) => {
+            genreCount[activity.category]++;
+        });
+        
+        let maxCount = 0;
+        Object.entries(genreCount).forEach(([genre, count]) => {
+            if (count > maxCount) {
+                maxCount = count;
+                mostFrequentGenre = genre as GenreType;
+            }
+        });
+    }
 
     return (
         <div className="flex-1 p-4 space-y-6 pb-24">
@@ -390,12 +383,12 @@ export function AccountPage() {
             {showColorSettings && (
                 <div className="card-gradient rounded-2xl p-6 space-y-4">
                     <h3 className="text-sm font-medium text-muted-foreground">
-                        アバター色を選択
+                        アイコンカラーを選択
                     </h3>
 
                     {/* 外側の色 */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">外側の色</label>
+                        <label className="text-sm font-medium">外側のカラー</label>
                         <div className="grid grid-cols-2 gap-2">
                             {avatarColorOptions.map((option) => (
                                 <button
@@ -411,9 +404,10 @@ export function AccountPage() {
                                             : "border-transparent opacity-70 hover:opacity-100"
                                     )}
                                 >
-                                    <span className="text-sm font-medium text-white">
-                                        {option.label}
-                                    </span>
+                                     <span className="text-sm font-medium text-white drop-shadow-[0_0_2px_black]">
+                                      {option.label}
+                                     </span>
+
                                 </button>
                             ))}
                         </div>
@@ -421,7 +415,7 @@ export function AccountPage() {
 
                     {/* 内側の色 */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">内側の色</label>
+                        <label className="text-sm font-medium">内側のカラー</label>
                         <div className="grid grid-cols-2 gap-2">
                             {avatarColorOptions.map((option) => (
                                 <button
@@ -437,9 +431,10 @@ export function AccountPage() {
                                             : "border-transparent opacity-70 hover:opacity-100"
                                     )}
                                 >
-                                    <span className="text-sm font-medium text-white">
-                                        {option.label}
+                                    <span className="text-sm font-medium text-white drop-shadow-[0_0_2px_black]">
+                                     {option.label}
                                     </span>
+
                                 </button>
                             ))}
                         </div>
@@ -497,29 +492,29 @@ export function AccountPage() {
             {/* メインカード: 一番出やすいジャンル */}
             <div className="card-gradient rounded-2xl p-6">
                 <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                    よく実行するジャンル
+                    Favorite Genre
                 </h3>
                 {mostFrequentGenre ? (
                     <div className="flex items-center gap-4">
                         <div
                             className={cn(
                                 "w-20 h-20 rounded-2xl bg-linear-to-br flex items-center justify-center text-4xl shadow-lg",
-                                categoryIcons[mostFrequentGenre.key]?.color ||
+                                categoryIcons[mostFrequentGenre]?.color ||
                                     "from-gray-400 to-gray-500"
                             )}
                         >
-                            {categoryIcons[mostFrequentGenre.key]?.icon || "✨"}
+                            {categoryIcons[mostFrequentGenre]?.icon || "✨"}
                         </div>
                         <div>
                             <p className="text-2xl font-bold">
-                                {categoryIcons[mostFrequentGenre.key]?.label ||
-                                    mostFrequentGenre.key}
+                                {categoryIcons[mostFrequentGenre]?.label ||
+                                    mostFrequentGenre}
                             </p>
                             <p className="text-muted-foreground text-sm">
                                 {
                                     myActivities.filter(
                                         (a) =>
-                                            a.category === mostFrequentGenre.key
+                                            a.category === mostFrequentGenre
                                     ).length
                                 }
                                 回実行
@@ -549,7 +544,7 @@ export function AccountPage() {
                     <div className="flex items-center gap-2 text-muted-foreground mb-2">
                         <Flame className="w-5 h-5 text-orange-500" />
                         <span className="text-sm font-medium">
-                            累計実行回数
+                            Total Runs
                         </span>
                     </div>
                     <p
@@ -567,7 +562,7 @@ export function AccountPage() {
                     <div className="flex items-center gap-2 text-muted-foreground mb-2">
                         <Trophy className="w-5 h-5 text-yellow-500" />
                         <span className="text-sm font-medium">
-                            次のランクまで
+                            To Next Rank
                         </span>
                     </div>
                     {nextRank ? (
