@@ -261,15 +261,27 @@ if (isLoading) {
     const currentRank = getCurrentRank(activityCount);
     const { nextRank, remaining } = getNextRankInfo(activityCount);
 
-    // localStorage から genreScores を取得し、最もスコアが高いジャンルを決定論的に選定
-    const genreScores = loadGenreScores("genreScores");
+    // myActivities から最も作成したジャンルを計算
     let mostFrequentGenre: GenreType | null = null;
-    if (genreScores && genreScores.length > 0) {
-      // 最も高いスコアを持つジャンルを確定的に選ぶ
-      const maxGenre = genreScores.reduce((prev, current) =>
-        current.value > prev.value ? current : prev
-      );
-      mostFrequentGenre = maxGenre.key;
+    if (myActivities.length > 0) {
+        const genreCount: Record<GenreType, number> = {
+            RELAX: 0,
+            MOVE: 0,
+            CREATIVE: 0,
+            MUSIC: 0,
+        };
+        
+        myActivities.forEach((activity) => {
+            genreCount[activity.category]++;
+        });
+        
+        let maxCount = 0;
+        Object.entries(genreCount).forEach(([genre, count]) => {
+            if (count > maxCount) {
+                maxCount = count;
+                mostFrequentGenre = genre as GenreType;
+            }
+        });
     }
 
     return (
