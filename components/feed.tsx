@@ -139,7 +139,7 @@ export function Feed() {
          <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-6"> 
             <Sparkles className="w-10 h-10 text-muted-foreground/50 animate-spin" /> 
             </div> 
-            <p className="text-lg font-medium">読み込み中...</p> 
+            <p className="text-lg font-medium"></p> 
             </div>
 
                 ) : filteredActivities.length === 0 ? (
