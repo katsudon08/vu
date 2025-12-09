@@ -92,7 +92,7 @@ if (isLoading) {
                 <div className="max-w-2xl mx-auto px-4 py-4">
                     <h1 className="text-lg font-bold flex items-center gap-2">
                         <Heart className="w-5 h-5 fill-pink-500 text-pink-500" />
-                        いいねされたアクテビティ
+                        いいねされたアクティビティ
                         {likedActivities.length > 0 && (
                             <span className="text-sm font-normal text-muted-foreground">
                                 ({likedActivities.length})
