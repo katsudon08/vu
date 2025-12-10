@@ -59,6 +59,7 @@ export interface Activity {
   createdAt: Date
   likes: number
   likedBy: string[]
+  userActivityCount?: number
 }
 
 export interface Rank {
@@ -116,7 +117,8 @@ export async function fetchAllActivities(): Promise<Activity[]> {
           username,
           avatar_url,
           outer_color_id,
-          inner_color_id
+          inner_color_id,
+          activity_count
         )
       `)
       .order('created_at', { ascending: false })
@@ -132,6 +134,7 @@ export async function fetchAllActivities(): Promise<Activity[]> {
       userAvatar: item.users?.avatar_url || '/default-user-avatar.png',
       userOuterColorId: item.users?.outer_color_id,
       userInnerColorId: item.users?.inner_color_id,
+      userActivityCount: item.users?.activity_count,
       createdAt: new Date(item.created_at),
       likes: 0,
       likedBy: [],
@@ -188,7 +191,8 @@ export async function fetchActivitiesWithPagination(
           username,
           avatar_url,
           outer_color_id,
-          inner_color_id
+          inner_color_id,
+          activity_count
         )
       `,
         { count: 'exact' }
@@ -213,6 +217,7 @@ export async function fetchActivitiesWithPagination(
       userAvatar: item.users?.avatar_url || '/default-user-avatar.png',
       userOuterColorId: item.users?.outer_color_id,
       userInnerColorId: item.users?.inner_color_id,
+      userActivityCount: item.users?.activity_count,
       createdAt: new Date(item.created_at),
       likes: 0,
       likedBy: [],
@@ -293,7 +298,9 @@ export async function fetchLikedActivitiesWithPagination(
                   username,
                   avatar_url,
                   outer_color_id,
-                  inner_color_id
+                  outer_color_id,
+                  inner_color_id,
+                  activity_count
                 )
               `
       )
@@ -311,6 +318,7 @@ export async function fetchLikedActivitiesWithPagination(
       userAvatar: item.users?.avatar_url || '/default-user-avatar.png',
       userOuterColorId: item.users?.outer_color_id,
       userInnerColorId: item.users?.inner_color_id,
+      userActivityCount: item.users?.activity_count,
       createdAt: new Date(item.created_at),
       likes: 0,
       likedBy: [],
@@ -370,7 +378,10 @@ export async function fetchMyLikedActivitiesWithPagination(
           username,
           avatar_url,
           outer_color_id,
-          inner_color_id
+          avatar_url,
+          outer_color_id,
+          inner_color_id,
+          activity_count
         ),
         likes!inner(user_id)
       `, { count: 'exact' })
@@ -444,7 +455,8 @@ export async function fetchUserActivities(userId: string): Promise<Activity[]> {
           username,
           avatar_url,
           outer_color_id,
-          inner_color_id
+          inner_color_id,
+          activity_count
         )
       `)
       .eq('user_id', userData.id)
@@ -461,6 +473,7 @@ export async function fetchUserActivities(userId: string): Promise<Activity[]> {
       userAvatar: item.users?.avatar_url || '/default-user-avatar.png',
       userOuterColorId: item.users?.outer_color_id,
       userInnerColorId: item.users?.inner_color_id,
+      userActivityCount: item.users?.activity_count,
       createdAt: new Date(item.created_at),
       likes: 0,
       likedBy: [],
@@ -573,6 +586,7 @@ export async function createActivity(
       userId: userData.id,
       userName: userData.username,
       userAvatar: userData.avatar_url || '/default-user-avatar.png',
+      userActivityCount: newActivityCount,
       createdAt: new Date(data.created_at),
       likes: 0,
       likedBy: [],
