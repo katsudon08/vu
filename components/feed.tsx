@@ -126,18 +126,52 @@ export function Feed() {
 
     const handleToggleLike = async (activityId: string) => {
         if (!userId) return;
-        const isLiked = likedActivityIds.includes(activityId);
-        if (isLiked) {
-            await removeLike(userId, activityId);
-            setLikedActivityIds(
-                likedActivityIds.filter((id) => id !== activityId)
+
+        // Current state
+        const wasLiked = likedActivityIds.includes(activityId);
+
+        // Optimistic update
+        setLikedActivityIds((prev) =>
+            wasLiked ? prev.filter((id) => id !== activityId) : [...prev, activityId]
+        );
+
+        setActivities((prev) =>
+            prev.map((activity) => {
+                if (activity.id === activityId) {
+                    return {
+                        ...activity,
+                        likes: wasLiked ? activity.likes - 1 : activity.likes + 1,
+                    };
+                }
+                return activity;
+            })
+        );
+
+        try {
+            if (wasLiked) {
+                await removeLike(userId, activityId);
+            } else {
+                await addLike(userId, activityId);
+            }
+            // No reload needed
+        } catch (error) {
+            console.error("Failed to toggle like:", error);
+            // Revert state on error
+            setLikedActivityIds((prev) =>
+                wasLiked ? [...prev, activityId] : prev.filter((id) => id !== activityId)
             );
-        } else {
-            await addLike(userId, activityId);
-            setLikedActivityIds([...likedActivityIds, activityId]);
+            setActivities((prev) =>
+                prev.map((activity) => {
+                    if (activity.id === activityId) {
+                        return {
+                            ...activity,
+                            likes: wasLiked ? activity.likes + 1 : activity.likes - 1,
+                        };
+                    }
+                    return activity;
+                })
+            );
         }
-        // いいね変更イベントを発火
-        window.dispatchEvent(new Event("activityCreated"));
     };
 
     return (
