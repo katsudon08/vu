@@ -58,7 +58,7 @@ export default function RootLayout({
           href="/splash/launch-1170x2532.png"
         />
 
-        <meta name="apple-mobile-web-app-title" content="Ver.U" />
+        <meta name="apple-mobile-web-app-title" content="VU" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className={`${inter.className} antialiased`}>
