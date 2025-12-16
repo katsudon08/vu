@@ -3,19 +3,22 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
+import { InfiniteScrollSentinel } from "@/components/ui/infinite-scroll-sentinel";
 import { ActivityCard } from "./activity-card";
 import {
     fetchAllActivities,
     addLike,
     removeLike,
     fetchUserProfile,
+    fetchActivitiesWithPagination,
 } from "@/lib/api";
 import { useUser } from "@/contexts/user-context";
 import { cn } from "@/lib/utils";
-import { Users, User, Sparkles } from "lucide-react";
+import { Users, User, Sparkles, ChevronDown, Loader2 } from "lucide-react";
 import type { Activity } from "@/lib/api";
 
 type FeedTab = "all" | "mine";
+const PAGE_SIZE = 10;
 
 export function Feed() {
     const [activeTab, setActiveTab] = useState<FeedTab>("all");
@@ -23,6 +26,9 @@ export function Feed() {
     const [likedActivityIds, setLikedActivityIds] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [userUUID, setUserUUID] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const { userId } = useUser();
 
     // ユーザーの UUID を取得
@@ -40,29 +46,71 @@ export function Feed() {
     }, [userId]);
 
     // アクティビティを取得
-    const loadActivities = async () => {
-        setIsLoading(true);
-        console.log("Feed: loadActivities called, userId:", userId);
-        const data = await fetchAllActivities();
-        console.log("Feed: fetchAllActivities returned:", data);
-        setActivities(data);
+    const loadActivities = async (isInitial = false) => {
+        if (isInitial) {
+            setIsLoading(true);
+            setPage(1);
+            setActivities([]); // Clear previous activities
+        } else {
+            setIsLoadingMore(true);
+        }
+
+        const currentPage = isInitial ? 1 : page;
+        // mineタブでuserUUIDがない場合はロードしない（useEffectで待機）
+        if (activeTab === "mine" && !userUUID) {
+            setIsLoading(false);
+            return;
+        }
+
+        console.log(`Feed: loading activities page ${currentPage} for tab ${activeTab}`);
+
+        const filterUserId = activeTab === "mine" && userUUID ? userUUID : undefined;
+        const { activities: newActivities, hasMore: more } =
+            await fetchActivitiesWithPagination(currentPage, PAGE_SIZE, filterUserId);
+
+        if (isInitial) {
+            setActivities(newActivities);
+        } else {
+            setActivities((prev) => [...prev, ...newActivities]);
+        }
+        
+        setHasMore(more);
+        if (!isInitial) {
+            setPage((prev) => prev + 1);
+        } else {
+             // Initial load sets page to 2 for next load
+            setPage(2);
+        }
+
         // 現在のユーザーがいいねしているアクティビティを取得
         if (userUUID) {
-            const likedIds = data
+            const likedIds = newActivities
                 .filter((a) => a.likedBy.includes(userUUID))
                 .map((a) => a.id);
-            setLikedActivityIds(likedIds);
+            setLikedActivityIds((prev) => {
+                if (isInitial) return likedIds;
+                // Merge and deduplicate
+                return Array.from(new Set([...prev, ...likedIds]));
+            });
         }
-        setIsLoading(false);
+        
+        if (isInitial) setIsLoading(false);
+        else setIsLoadingMore(false);
     };
 
     useEffect(() => {
-        loadActivities();
+        // userUUIDがまだ取得できていない場合、mineタブならロードを待機
+        if (activeTab === "mine" && !userUUID) return;
+        
+        loadActivities(true);
+
+        
 
         // アクティビティ作成イベントをリスン
         const handleActivityCreated = () => {
             console.log("Activity created, reloading feed...");
-            loadActivities();
+             // Reload from scratch
+            loadActivities(true);
         };
 
         window.addEventListener("activityCreated", handleActivityCreated);
@@ -71,27 +119,59 @@ export function Feed() {
                 "activityCreated",
                 handleActivityCreated
             );
-    }, [userId, userUUID]);
+    }, [userId, userUUID, activeTab]); // activeTab を依存配列に追加
 
-    const filteredActivities =
-        activeTab === "all"
-            ? activities
-            : activities.filter((a) => a.userId === userUUID);
+    // フィルタリングはサーバーサイドで行うため、ここはそのまま表示
+    const filteredActivities = activities;
 
     const handleToggleLike = async (activityId: string) => {
         if (!userId) return;
-        const isLiked = likedActivityIds.includes(activityId);
-        if (isLiked) {
-            await removeLike(userId, activityId);
-            setLikedActivityIds(
-                likedActivityIds.filter((id) => id !== activityId)
+
+        // Current state
+        const wasLiked = likedActivityIds.includes(activityId);
+
+        // Optimistic update
+        setLikedActivityIds((prev) =>
+            wasLiked ? prev.filter((id) => id !== activityId) : [...prev, activityId]
+        );
+
+        setActivities((prev) =>
+            prev.map((activity) => {
+                if (activity.id === activityId) {
+                    return {
+                        ...activity,
+                        likes: wasLiked ? activity.likes - 1 : activity.likes + 1,
+                    };
+                }
+                return activity;
+            })
+        );
+
+        try {
+            if (wasLiked) {
+                await removeLike(userId, activityId);
+            } else {
+                await addLike(userId, activityId);
+            }
+            // No reload needed
+        } catch (error) {
+            console.error("Failed to toggle like:", error);
+            // Revert state on error
+            setLikedActivityIds((prev) =>
+                wasLiked ? [...prev, activityId] : prev.filter((id) => id !== activityId)
             );
-        } else {
-            await addLike(userId, activityId);
-            setLikedActivityIds([...likedActivityIds, activityId]);
+            setActivities((prev) =>
+                prev.map((activity) => {
+                    if (activity.id === activityId) {
+                        return {
+                            ...activity,
+                            likes: wasLiked ? activity.likes + 1 : activity.likes - 1,
+                        };
+                    }
+                    return activity;
+                })
+            );
         }
-        // いいね変更イベントを発火
-        window.dispatchEvent(new Event("activityCreated"));
     };
 
     return (
@@ -167,9 +247,16 @@ export function Feed() {
                                 index={index}
                             />
                         ))}
+                        
+                        <InfiniteScrollSentinel
+                            onInteract={() => loadActivities(false)}
+                            hasMore={hasMore}
+                            isLoading={isLoadingMore}
+                        />
                     </div>
                 )}
             </div>
         </div>
     );
 }
+

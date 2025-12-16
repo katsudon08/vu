@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Heart, MessageCircle, Send, Bookmark, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Activity } from "@/lib/api";
-import { categoryIcons, avatarColorOptions } from "@/lib/api";
+import { categoryIcons, avatarColorOptions, getCurrentRank } from "@/lib/api";
 
 interface ActivityCardProps {
     activity: Activity;
@@ -71,6 +71,9 @@ export function ActivityCard({
         onToggleLike();
     };
 
+    // ランク情報を取得
+    const rank = getCurrentRank(activity.userActivityCount || 0);
+
     return (
         <article
             className="bg-card border-b border-border/50 animate-float-up"
@@ -92,7 +95,12 @@ export function ActivityCard({
                     </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">{activity.userName}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm">{activity.userName}</p>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full text-white bg-linear-to-r ${rank.color} font-bold shadow-sm`}>
+                            {rank.name}
+                        </span>
+                    </div>
                     <p className="text-xs text-muted-foreground">{timeAgo}</p>
                 </div>
                 {activity.category && (
